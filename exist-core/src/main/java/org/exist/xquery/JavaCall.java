@@ -27,19 +27,21 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import org.exist.dom.QName;
 import org.exist.xquery.value.Item;
 import org.exist.xquery.value.JavaObjectValue;
 import org.exist.xquery.value.Sequence;
+import org.exist.xquery.value.SequenceType;
 import org.exist.xquery.value.Type;
 
 /**
  * A special function call to a Java method or constructor.
- * 
+ *
  * This class handles all function calls who's namespace URI
  * starts with "java:".
- * 
+ *
  * @author <a href="mailto:wolfgang@exist-db.org">Wolfgang Meier</a>
  */
 public class JavaCall extends Function {
@@ -49,6 +51,33 @@ public class JavaCall extends Function {
 	private Class<?> myClass = null;
 	private List<AccessibleObject> candidateMethods = new ArrayList<>(5);
 
+  public static SequenceType[] arguments(int arity) {
+    return IntStream.range(0, arity).mapToObj((p) -> FunctionSignature.DEFAULT_TYPE).toArray(SequenceType[]::new);
+  }
+
+  /**
+   * Create new call on the Java method or constructor identified by the QName.
+   *
+   * @param context current context
+   * @param qname the name of the function
+   * @throws XPathException in case of a static error
+   */
+  public JavaCall(XQueryContext context, QName qname) throws XPathException {
+    this(context, qname, new FunctionSignature(qname));
+  };
+
+  /**
+   * Create new call on the Java method or constructor identified by the QName.
+   *
+   * @param context current context
+   * @param qname the name of the function
+   * @params the parameters of the function
+   * @throws XPathException in case of a static error
+   */
+  public JavaCall(XQueryContext context, QName qname, List<Expression> params) throws XPathException {
+    this(context, qname, new FunctionSignature(qname, arguments(params.size()), FunctionSignature.DEFAULT_TYPE));
+  };
+
 	/**
 	 * Create new call on the Java method or constructor identified by the QName.
 	 *
@@ -56,8 +85,8 @@ public class JavaCall extends Function {
 	 * @param qname the name of the function
 	 * @throws XPathException in case of a static error
 	 */
-	public JavaCall(XQueryContext context, QName qname) throws XPathException {
-		super(context, null);
+	public JavaCall(XQueryContext context, QName qname, FunctionSignature signature) throws XPathException {
+		super(context, signature);
 		this.qname = qname;
 		String namespaceURI = context.getURIForPrefix(qname.getPrefix());
 		if (!namespaceURI.startsWith("java:"))
@@ -70,7 +99,7 @@ public class JavaCall extends Function {
 
 		try {
 			LOG.debug("Trying to find class {}", namespaceURI);
-			
+
 			myClass = Class.forName(namespaceURI);
 		} catch (final ClassNotFoundException e) {
 			throw new XPathException(this, "Class: " + namespaceURI + " not found", e);
@@ -110,7 +139,7 @@ public class JavaCall extends Function {
 	public Cardinality getCardinality() {
 		return Cardinality.ZERO_OR_MORE;
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see org.exist.xquery.Function#setArguments(java.util.List)
 	 */
@@ -132,7 +161,7 @@ public class JavaCall extends Function {
                 }
             }
 			if (candidateMethods.size() == 0) {
-				final String message = "no constructor found with " + argCount + " arguments"; 
+				final String message = "no constructor found with " + argCount + " arguments";
 				throw new XPathException(this,
 					message,
 					new NoSuchMethodException(message));
@@ -157,7 +186,7 @@ public class JavaCall extends Function {
                 }
             }
 			if (candidateMethods.size() == 0) {
-				final String message = "no method matches " + name + " with " + argCount + " arguments"; 
+				final String message = "no method matches " + name + " with " + argCount + " arguments";
 				throw new XPathException(this,
 					message,
 					new NoSuchMethodException(message));
@@ -177,7 +206,7 @@ public class JavaCall extends Function {
 	public Sequence eval(Sequence contextSequence, Item contextItem) throws XPathException {
 		
         if (context.getProfiler().isEnabled()) {
-            context.getProfiler().start(this);       
+            context.getProfiler().start(this);
             context.getProfiler().message(this, Profiler.DEPENDENCIES, "DEPENDENCIES", Dependency.getDependenciesName(this.getDependencies()));
             if (contextSequence != null)
                 {context.getProfiler().message(this, Profiler.START_SEQUENCES, "CONTEXT SEQUENCE", contextSequence);}
@@ -221,7 +250,7 @@ public class JavaCall extends Function {
 				params[i - 1] = args[i].toJavaObject(paramTypes[i - 1]);
 			}
 		}
-        
+
         Sequence result;
 		if (bestMethod instanceof Constructor<?>) {
 			try {
@@ -277,13 +306,13 @@ public class JavaCall extends Function {
 			}
 		}
 
-         if (context.getProfiler().isEnabled())           
-                {context.getProfiler().end(this, "", result);} 
-        
-        if (result==null) {result = Sequence.EMPTY_SEQUENCE;} 
-         
+         if (context.getProfiler().isEnabled())
+                {context.getProfiler().end(this, "", result);}
+
+        if (result==null) {result = Sequence.EMPTY_SEQUENCE;}
+
         return result;
-        
+
 	}
 
 	/* (non-Javadoc)
@@ -292,7 +321,7 @@ public class JavaCall extends Function {
 	public int returnsType() {
 		return Type.ITEM;
 	}
-	
+
 	private int[] getConversionPreferences(AccessibleObject method, Sequence[] args) {
 		final int prefs[] = new int[args.length];
 		Class<?> paramTypes[] = null;

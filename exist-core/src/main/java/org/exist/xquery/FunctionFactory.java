@@ -150,7 +150,7 @@ public class FunctionFactory {
     private static GeneralComparison endsWith(XQueryContext context, XQueryAST ast,
             PathExpr parent, List<Expression> params) throws XPathException {
         if (params.size() < 2) {
-            throw new XPathException(ast.getLine(), ast.getColumn(), 
+            throw new XPathException(ast.getLine(), ast.getColumn(),
         		ErrorCodes.XPST0017, "Function ends-with() requires two or three arguments");
         }
         if (params.size() > 3) {
@@ -261,7 +261,7 @@ public class FunctionFactory {
                 "Java binding is disabled in the current configuration (see conf.xml)." +
                 " Call to " + qname.getStringValue() + " denied.");
         }
-        final JavaCall call = new JavaCall(context, qname);
+        final JavaCall call = new JavaCall(context, qname, params);
         call.setLocation(ast.getLine(), ast.getColumn());
         call.setArguments(params);
         return call;
@@ -429,12 +429,12 @@ public class FunctionFactory {
         }
         return fc;
     }
- 
+
     /**
      * Wrap a function call into a user defined function.
      * This is used to handle dynamic function calls or partial
      * function applications on built in functions.
-     * 
+     *
      * @param context current context
      * @param call the function call to be wrapped
      * @return a new function call referencing an inline function
@@ -456,7 +456,7 @@ public class FunctionFactory {
 			variables[i] = varName;
 			final VariableReference ref = new VariableReference(context, varName);
 			innerArgs.add(ref);
-			
+
 			// copy parameter sequence types
 			// overloaded functions like concat may have an arbitrary number of arguments
 			if (i < paramTypes.length)
@@ -473,11 +473,11 @@ public class FunctionFactory {
 		for (final QName varName: variables) {
 			func.addVariable(varName);
 		}
-		
+
 		call.setArguments(innerArgs);
-		
+
 		func.setFunctionBody(call);
-		
+
 		final FunctionCall wrappedCall = new FunctionCall(context, func);
 		wrappedCall.setArguments(wrapperArgs);
 		return wrappedCall;

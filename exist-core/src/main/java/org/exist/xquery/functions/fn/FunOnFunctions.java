@@ -59,23 +59,23 @@ public class FunOnFunctions extends BasicFunction {
             new SequenceType[] {
                 new FunctionParameterSequenceType("function", Type.FUNCTION_REFERENCE, Cardinality.EXACTLY_ONE, "The function item")
             },
-            new FunctionReturnSequenceType(Type.INTEGER, Cardinality.EXACTLY_ONE, 
+            new FunctionReturnSequenceType(Type.INTEGER, Cardinality.EXACTLY_ONE,
             		"The arity of the function."))
     };
-	
+
 	public FunOnFunctions(XQueryContext context, FunctionSignature signature) {
 		super(context, signature);
 	}
-	
+
 	@Override
 	public void analyze(AnalyzeContextInfo contextInfo) throws XPathException {
 		super.analyze(contextInfo);
 		if (getContext().getXQueryVersion()<30) {
-			throw new XPathException(this, ErrorCodes.EXXQDY0003, "Function '" + 
+			throw new XPathException(this, ErrorCodes.EXXQDY0003, "Function '" +
 					getSignature().getName() + "' is only supported for xquery version \"3.0\" and later.");
 		}
 	}
-	
+
 	@Override
 	public Sequence eval(Sequence[] args, Sequence contextSequence)
 			throws XPathException {
@@ -83,8 +83,7 @@ public class FunOnFunctions extends BasicFunction {
 			if (isCalledAs("function-lookup")) {
 				final QName fname = ((QNameValue) args[0].itemAt(0)).getQName();
 				final int arity = ((IntegerValue)args[1].itemAt(0)).getInt();
-				
-			    FunctionCall call;
+			    FunctionCall call = null;
                 try {
                     call = NamedFunctionReference.lookupFunction(this, context, fname, arity);
                 } catch (final XPathException e) {
@@ -93,6 +92,15 @@ public class FunOnFunctions extends BasicFunction {
                         return Sequence.EMPTY_SEQUENCE;
                     }
                     throw e;
+                // additional catch to see what is going on
+                } catch (final Exception e) {
+                  LOG.error("LOOKING UP FUNCTION {"+fname.getNamespaceURI()+"}"+fname.getStringValue()+" EXCEPTION "+e.getClass().getName()+" : "+e.getMessage());
+                  int maxi = 6;
+                  for (StackTraceElement t : e.getStackTrace()) {
+                    LOG.error(t.toString());
+                    if (--maxi <= 0) break;
+                  }
+                  throw e;
                 }
 			    return call == null ? Sequence.EMPTY_SEQUENCE : new FunctionReference(this, call);
 			} else if (isCalledAs("function-name")) {
@@ -116,7 +124,7 @@ public class FunOnFunctions extends BasicFunction {
 	}
 
 	public static FunctionCall lookupFunction(final Expression parent, final QName qname, final int arity) {
-	    // check if the function is from a module 
+	    // check if the function is from a module
 	    final Module[] modules = parent.getContext().getModules(qname.getNamespaceURI());
 	    try {
 			UserDefinedFunction func = null;
