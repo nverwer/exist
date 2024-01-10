@@ -19,12 +19,16 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
-package org.exist.interpreter;
+package org.exist.xquery.modules.file;
 
-/**
- * Used to uniquely identify a function by its function name and arity.
- *
- */
-public interface FunctionId<T> extends Comparable<T> {
+import org.exist.dom.QName;
+import org.exist.xquery.ErrorCodes;
 
+class FileErrorCode extends ErrorCodes.ErrorCode {
+    public static final ErrorCodes.ErrorCode DIRECTORY_NOT_FOUND = new FileErrorCode("DIRECTORY_NOT_FOUND",
+            "The directory could not be found.");
+
+    FileErrorCode(final String code, final String description) {
+        super(new QName(code, FileModule.NAMESPACE_URI, FileModule.PREFIX), description);
+    }
 }
