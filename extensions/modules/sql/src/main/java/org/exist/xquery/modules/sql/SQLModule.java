@@ -37,25 +37,35 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import org.exist.dom.QName;
 import org.exist.xquery.*;
 
+import java.sql.Array;
+import java.sql.Blob;
+import java.sql.CallableStatement;
+import java.sql.Clob;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.NClob;
+import java.sql.PreparedStatement;
+import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
-
+import java.sql.SQLWarning;
+import java.sql.SQLXML;
+import java.sql.Savepoint;
+import java.sql.Statement;
+import java.sql.Struct;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.exist.xquery.modules.ModuleUtils;
 import org.exist.xquery.modules.ModuleUtils.ContextMapEntryModifier;
-import org.exist.xquery.value.FunctionParameterSequenceType;
-import org.exist.xquery.value.FunctionReturnSequenceType;
-
 import javax.annotation.Nullable;
 
 import static org.exist.xquery.FunctionDSL.functionDefs;
@@ -86,6 +96,7 @@ public class SQLModule extends AbstractInternalModule {
     public final static String PREPARED_STATEMENTS_CONTEXTVAR = "_eXist_sql_prepared_statements";
 
     private static final Map<String, HikariDataSource> CONNECTION_POOLS = new ConcurrentHashMap<>();
+    private static final Map<String, Date> NO_CONNECTION_POOLS = new ConcurrentHashMap<>();
     private static final Pattern POOL_NAME_PATTERN = Pattern.compile("(pool\\.[0-9]+)\\.name");
 
     public SQLModule(final Map<String, List<?>> parameters) {
@@ -105,7 +116,8 @@ public class SQLModule extends AbstractInternalModule {
                     final String poolId = poolNameMatcher.group(1);
                     final String poolName = parameter.getValue().get(0).toString();
                     if (poolName != null && !poolName.isEmpty()) {
-                        if (!CONNECTION_POOLS.containsKey(poolName)) {
+                        boolean connectionFailure = NO_CONNECTION_POOLS.size() > 0;
+                        if (!CONNECTION_POOLS.containsKey(poolName) && !connectionFailure) {
 
                             final Properties poolProperties = new Properties();;
                             poolProperties.setProperty("poolName", poolName);
@@ -121,9 +133,18 @@ public class SQLModule extends AbstractInternalModule {
                                 }
                             }
 
-                            final HikariConfig hikariConfig = new HikariConfig(poolProperties);
-                            final HikariDataSource hikariDataSource = new HikariDataSource(hikariConfig);
-                            CONNECTION_POOLS.put(poolName, hikariDataSource);
+                            try {
+                              final HikariConfig hikariConfig = new HikariConfig(poolProperties);
+                              final HikariDataSource hikariDataSource = new HikariDataSource(hikariConfig);
+                              CONNECTION_POOLS.put(poolName, hikariDataSource);
+                            } catch (Exception ex) {
+                              connectionFailure = true;
+                            }
+                        }
+                        if (connectionFailure && !NO_CONNECTION_POOLS.containsKey(poolName)) {
+                          LOG.warn("No database connection for "+poolName+" could be made. Also not for "+String.join(", ", NO_CONNECTION_POOLS.keySet()));
+                          CONNECTION_POOLS.put(poolName, new NoConnectionHikariDataSource());
+                          NO_CONNECTION_POOLS.put(poolName, new Date());
                         }
                     }
                 }
@@ -290,5 +311,186 @@ public class SQLModule extends AbstractInternalModule {
                 }
             }
         });
+    }
+
+    class NoConnectionHikariDataSource extends HikariDataSource {
+      @Override
+      public Connection getConnection() throws SQLException
+      {
+        return new Connection() {
+
+          @Override
+          public <T> T unwrap(Class<T> iface) throws SQLException { return null; }
+
+          @Override
+          public boolean isWrapperFor(Class<?> iface) throws SQLException { return false; }
+
+          @Override
+          public Statement createStatement() throws SQLException { return null; }
+
+          @Override
+          public PreparedStatement prepareStatement(String sql) throws SQLException { return null; }
+
+          @Override
+          public CallableStatement prepareCall(String sql) throws SQLException { return null; }
+
+          @Override
+          public String nativeSQL(String sql) throws SQLException { return null; }
+
+          @Override
+          public void setAutoCommit(boolean autoCommit) throws SQLException {}
+
+          @Override
+          public boolean getAutoCommit() throws SQLException { return false; }
+
+          @Override
+          public void commit() throws SQLException {}
+
+          @Override
+          public void rollback() throws SQLException {}
+
+          @Override
+          public void close() throws SQLException {}
+
+          @Override
+          public boolean isClosed() throws SQLException { return false; }
+
+          @Override
+          public DatabaseMetaData getMetaData() throws SQLException { return null; }
+
+          @Override
+          public void setReadOnly(boolean readOnly) throws SQLException {}
+
+          @Override
+          public boolean isReadOnly() throws SQLException { return false; }
+
+          @Override
+          public void setCatalog(String catalog) throws SQLException {}
+
+          @Override
+          public String getCatalog() throws SQLException { return null; }
+
+          @Override
+          public void setTransactionIsolation(int level) throws SQLException {}
+
+          @Override
+          public int getTransactionIsolation() throws SQLException { return 0;}
+
+          @Override
+          public SQLWarning getWarnings() throws SQLException { return null; }
+
+          @Override
+          public void clearWarnings() throws SQLException {}
+
+          @Override
+          public Statement createStatement(int resultSetType, int resultSetConcurrency)
+              throws SQLException { return null; }
+
+          @Override
+          public PreparedStatement prepareStatement(String sql, int resultSetType,
+              int resultSetConcurrency) throws SQLException { return null; }
+
+          @Override
+          public CallableStatement prepareCall(String sql, int resultSetType,
+              int resultSetConcurrency) throws SQLException { return null; }
+
+          @Override
+          public Map<String, Class<?>> getTypeMap() throws SQLException { return null; }
+
+          @Override
+          public void setTypeMap(Map<String, Class<?>> map) throws SQLException {}
+
+          @Override
+          public void setHoldability(int holdability) throws SQLException {}
+
+          @Override
+          public int getHoldability() throws SQLException { return 0; }
+
+          @Override
+          public Savepoint setSavepoint() throws SQLException { return null; }
+
+          @Override
+          public Savepoint setSavepoint(String name) throws SQLException { return null; }
+
+          @Override
+          public void rollback(Savepoint savepoint) throws SQLException {}
+
+          @Override
+          public void releaseSavepoint(Savepoint savepoint) throws SQLException {}
+
+          @Override
+          public Statement createStatement(int resultSetType, int resultSetConcurrency,
+              int resultSetHoldability) throws SQLException { return null; }
+
+          @Override
+          public PreparedStatement prepareStatement(String sql, int resultSetType,
+              int resultSetConcurrency, int resultSetHoldability) throws SQLException { return null; }
+
+          @Override
+          public CallableStatement prepareCall(String sql, int resultSetType,
+              int resultSetConcurrency, int resultSetHoldability) throws SQLException { return null; }
+
+          @Override
+          public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys)
+              throws SQLException { return null; }
+
+          @Override
+          public PreparedStatement prepareStatement(String sql, int[] columnIndexes)
+              throws SQLException { return null; }
+
+          @Override
+          public PreparedStatement prepareStatement(String sql, String[] columnNames)
+              throws SQLException { return null; }
+
+          @Override
+          public Clob createClob() throws SQLException { return null; }
+
+          @Override
+          public Blob createBlob() throws SQLException { return null; }
+
+          @Override
+          public NClob createNClob() throws SQLException { return null; }
+
+          @Override
+          public SQLXML createSQLXML() throws SQLException { return null; }
+
+          @Override
+          public boolean isValid(int timeout) throws SQLException { return false; }
+
+          @Override
+          public void setClientInfo(String name, String value) throws SQLClientInfoException {}
+
+          @Override
+          public void setClientInfo(Properties properties) throws SQLClientInfoException {}
+
+          @Override
+          public String getClientInfo(String name) throws SQLException { return null; }
+
+          @Override
+          public Properties getClientInfo() throws SQLException { return null; }
+
+          @Override
+          public Array createArrayOf(String typeName, Object[] elements) throws SQLException { return null; }
+
+          @Override
+          public Struct createStruct(String typeName, Object[] attributes) throws SQLException { return null; }
+
+          @Override
+          public void setSchema(String schema) throws SQLException {}
+
+          @Override
+          public String getSchema() throws SQLException { return null; }
+
+          @Override
+          public void abort(Executor executor) throws SQLException {}
+
+          @Override
+          public void setNetworkTimeout(Executor executor, int milliseconds)
+              throws SQLException {}
+
+          @Override
+          public int getNetworkTimeout() throws SQLException { return 0; }
+        };
+      }
     }
 }
