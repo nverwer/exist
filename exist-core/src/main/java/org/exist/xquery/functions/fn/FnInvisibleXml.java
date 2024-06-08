@@ -38,7 +38,7 @@ import de.bottlecaps.markup.blitz.Parser;
  *   fn:invisible-xml(
  *     $grammar  as item()?  := (),
  *     $options  as map(*)?  := {}
- *   )  as fn(xs:string) as item()
+ *   )  as function(xs:string) as item()
  * @see https://qt4cg.org/specifications/xpath-functions-40/Overview.html#ixml-functions
  *
  * To do:
