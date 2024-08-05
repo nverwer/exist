@@ -997,6 +997,7 @@ The BaseX Team. The original license statement is also included below.]]></pream
                     <execution>
                         <id>default-compile</id>
                         <configuration>
+                            <release>11</release>
                             <excludes>
                                 <!-- compiled by the Aspectj plugin below -->
                                 <exclude>org/exist/storage/lock/EnsureLockingAspect.java</exclude>

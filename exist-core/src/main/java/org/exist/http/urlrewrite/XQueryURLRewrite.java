@@ -362,6 +362,13 @@ public class XQueryURLRewrite extends HttpServlet {
                 }
             }
         } catch (final Throwable e) {
+            if (e instanceof IllegalArgumentException) {
+                LOG.warn("Invalid URI: {}", e.getMessage());
+                response.getWriter().print(e.getMessage());
+                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                response.flushBuffer();
+                return;
+            }
             LOG.error("Error while processing {}: {}", request.getRequestURI(), e.getMessage(), e);
             throw new ServletException("An error occurred while processing request to " + request.getRequestURI() + ": "
                     + e.getMessage(), e);
