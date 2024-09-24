@@ -224,6 +224,9 @@ public class FunHigherOrderFun extends BasicFunction {
             }
         } else if (isCalledAs("apply")) {
             try (final FunctionReference ref = (FunctionReference) args[0].itemAt(0)) {
+                // Sometimes the function reference has no realUser in its context. In that case we set it using prepareForExecution().
+                if (ref.getCall().getContext().getRealUser() == null)
+                    ref.getCall().getContext().prepareForExecution();
                 ref.analyze(cachedContextInfo);
                 final ArrayType array = (ArrayType) args[1].itemAt(0);
                 if (funcRefHasDifferentArity(ref, array.getSize())) {
