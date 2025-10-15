@@ -27,7 +27,7 @@
 
     <groupId>org.exist-db</groupId>
     <artifactId>exist-parent</artifactId>
-    <version>6.4.0-SNAPSHOT</version>
+    <version>6.4.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>eXist-db Parent</name>
@@ -573,7 +573,7 @@
                     <artifactId>dependency-check-maven</artifactId>
                     <version>10.0.3</version>
                     <configuration>
-                        <nvdApiKey>cb452226-8de1-4d27-9032-7c9b8741c880</nvdApiKey>
+                        <nvdApiKey>${nvdApiKey}</nvdApiKey>
                         <!-- The OSS Index Server (https://ossindex.sonatype.org) can sometimes be flaky -->
                         <ossIndexWarnOnlyOnRemoteErrors>true</ossIndexWarnOnlyOnRemoteErrors>
 
@@ -1105,6 +1105,39 @@
     <repositories>
         <repository>
             <id>exist-db-snapshots</id>
+            <name>exist-db.org - eXist-db Snapshots</name>
+            <url>https://repo.exist-db.org/repository/exist-db-snapshots/</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>exist-db</id>
+            <name>exist-db.org - eXist-db Releases</name>
+            <url>https://repo.exist-db.org/repository/exist-db/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>exist-db-maven-central-mirror</id>
+            <name>exist-db.org - eXist-db Releases</name>
+            <url>https://repo.exist-db.org/repository/maven-central/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>evolvedbinary-snapshots</id>
             <name>Evolved Binary - eXist-db Snapshots</name>
             <url>https://repo.evolvedbinary.com/repository/exist-db-snapshots/</url>
             <releases>
@@ -1115,7 +1148,7 @@
             </snapshots>
         </repository>
         <repository>
-            <id>exist-db</id>
+            <id>evolvedbinary-releases</id>
             <name>Evolved Binary - eXist-db Releases</name>
             <url>https://repo.evolvedbinary.com/repository/exist-db/</url>
             <releases>
@@ -1134,6 +1167,39 @@
         </pluginRepository>
         <pluginRepository>
             <id>exist-db</id>
+            <name>exist-db.org - eXist-db Releases</name>
+            <url>https://repo.exist-db.org/repository/exist-db/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </pluginRepository>
+        <pluginRepository>
+            <id>exist-db-maven-central-mirror</id>
+            <name>exist-db.org - eXist-db Releases</name>
+            <url>https://repo.exist-db.org/repository/maven-central/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </pluginRepository>
+        <pluginRepository>
+            <id>exist-db-snapshots</id>
+            <name>exist-db.org - eXist-db Snapshots</name>
+            <url>https://repo.exist-db.org/repository/exist-db-snapshots/</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </pluginRepository>
+        <pluginRepository>
+            <id>evolvedbinary-releases</id>
             <name>Evolved Binary - eXist-db Releases</name>
             <url>https://repo.evolvedbinary.com/repository/exist-db/</url>
             <releases>
@@ -1144,7 +1210,7 @@
             </snapshots>
         </pluginRepository>
         <pluginRepository>
-            <id>exist-db-snapshots</id>
+            <id>evolvedbinary-snapshots</id>
             <name>Evolved Binary - eXist-db Snapshots</name>
             <url>https://repo.evolvedbinary.com/repository/exist-db-snapshots/</url>
             <releases>
@@ -1159,13 +1225,13 @@
     <distributionManagement>
         <snapshotRepository>
             <id>exist-db-snapshots</id>
-            <name>Evolved Binary - eXist-db Snapshots</name>
-            <url>https://repo.evolvedbinary.com/repository/exist-db-snapshots/</url>
+            <name>exist-db.org - eXist-db Snapshots</name>
+            <url>https://repo.exist-db.org/repository/exist-db-snapshots/</url>
         </snapshotRepository>
         <repository>
             <id>sonatype-nexus-staging</id>
             <name>Nexus Release Repository</name>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+            <url>https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
 
