@@ -21,6 +21,8 @@
  */
 package org.exist.dom.persistent;
 
+import org.exist.dom.QName;
+import org.exist.dom.QName.IllegalQNameException;
 import org.exist.numbering.NodeId;
 import org.exist.storage.Signatures;
 import org.exist.util.ByteConversion;
@@ -228,6 +230,16 @@ public class ProcessingInstructionImpl extends StoredNode implements ProcessingI
     @Override
     public Node getFirstChild() {
         return null;
+    }
+
+    @Override
+    public QName getQName() {
+        try {
+            return new QName(target);
+        } catch (IllegalQNameException iqne) {
+            LOG.error("Illegal target name for processing instruction: " + target, iqne);
+            return null;
+        }
     }
 }
 
